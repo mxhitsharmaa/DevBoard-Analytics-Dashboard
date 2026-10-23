@@ -7,83 +7,170 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Activity,
+  ArrowRight,
+  GitBranch,
+  Clock3,
 } from "lucide-react";
+
+import ActivityChart from "../components/ActivityChart";
+import LanguageChart from "../components/LanguageChart";
+import RecentCommits from "../components/RecentCommits";
+import GitHubExplorer from "../components/GitHubExplorer";
+import type { DashboardRange } from "../components/Header";
+
+import {
+  dailyActivity,
+  weeklyActivity,
+  monthlyActivity,
+  languageUsage,
+} from "../data/mockData";
+
+interface DashboardProps {
+  isDark: boolean;
+  selectedRange: DashboardRange;
+  onSelectedRangeChange: (range: DashboardRange) => void;
+  searchQuery: string;
+}
 
 const stats = [
   {
     title: "Total Commits",
     value: "1,284",
     change: "+12.8%",
-    detail: "vs. previous period",
-    icon: GitCommitHorizontal,
     positive: true,
-    color: "indigo",
+    icon: GitCommitHorizontal,
+    iconColor: "text-violet-500",
+    iconBg: "bg-violet-500/10",
+    description: "Code contributions",
   },
   {
     title: "Pull Requests",
-    value: "86",
+    value: "186",
     change: "+8.2%",
-    detail: "vs. previous period",
-    icon: GitPullRequest,
     positive: true,
-    color: "violet",
+    icon: GitPullRequest,
+    iconColor: "text-emerald-500",
+    iconBg: "bg-emerald-500/10",
+    description: "Collaboration activity",
   },
   {
     title: "Open Issues",
     value: "24",
     change: "-5.4%",
-    detail: "vs. previous period",
-    icon: CircleAlert,
     positive: true,
-    color: "amber",
+    icon: CircleAlert,
+    iconColor: "text-amber-500",
+    iconBg: "bg-amber-500/10",
+    description: "Outstanding issues",
   },
   {
     title: "Build Success",
     value: "98.6%",
     change: "+2.1%",
-    detail: "vs. previous period",
-    icon: CheckCircle2,
     positive: true,
-    color: "emerald",
+    icon: CheckCircle2,
+    iconColor: "text-sky-500",
+    iconBg: "bg-sky-500/10",
+    description: "Successful builds",
   },
 ];
 
-const colorStyles: Record<string, string> = {
-  indigo: "bg-indigo-500/15 text-indigo-300",
-  violet: "bg-violet-500/15 text-violet-300",
-  amber: "bg-amber-500/15 text-amber-300",
-  emerald: "bg-emerald-500/15 text-emerald-300",
+const repositoryHealth = [
+  { name: "Frontend App", status: "Healthy" },
+  { name: "API Service", status: "Healthy" },
+  { name: "Design System", status: "Warning" },
+  { name: "Documentation", status: "Healthy" },
+];
+
+const activityRanges = {
+  Daily: dailyActivity,
+  Weekly: weeklyActivity,
+  Monthly: monthlyActivity,
 };
 
-export default function Dashboard() {
+export default function Dashboard({
+  isDark,
+  selectedRange,
+  onSelectedRangeChange,
+  searchQuery,
+}: DashboardProps) {
+  const chartData = activityRanges[selectedRange];
+
+  const colors = {
+    heading: isDark ? "text-white" : "text-slate-900",
+    text: isDark ? "text-slate-400" : "text-slate-500",
+    card: isDark
+      ? "border-slate-800/80 bg-slate-900/70"
+      : "border-slate-200 bg-white",
+    cardHover: isDark
+      ? "hover:border-slate-700 hover:bg-slate-900"
+      : "hover:border-slate-300 hover:shadow-md",
+    rangeContainer: isDark
+      ? "border-slate-800 bg-slate-900"
+      : "border-slate-200 bg-white",
+    inactiveRange: isDark
+      ? "text-slate-400 hover:bg-slate-800 hover:text-white"
+      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+    rangeBadge: isDark
+      ? "bg-slate-800 text-slate-300"
+      : "bg-slate-100 text-slate-600",
+    divider: isDark ? "border-slate-800" : "border-slate-100",
+    repositoryText: isDark ? "text-slate-200" : "text-slate-700",
+  };
+
   return (
-    <div className="space-y-8">
-      <section className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-8 lg:space-y-10">
+      <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <Activity size={16} className="text-indigo-400" />
-            Project performance
+          <div className={`flex items-center gap-2 text-sm ${colors.text}`}>
+            <span className="size-2 rounded-full bg-emerald-500" />
+            Developer workspace
           </div>
-          <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">
-            Welcome back, Developer
-          </h3>
-          <p className="mt-2 text-sm text-slate-400">
-            Here is what's happening across your development projects.
+
+          <h1 className={`mt-3 text-2xl font-bold tracking-tight sm:text-3xl ${colors.heading}`}>
+            Welcome back, Mohit
+          </h1>
+
+          <p className={`mt-2 max-w-xl text-sm leading-6 ${colors.text}`}>
+            Track your development activity, repository health and team
+            performance in one place.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-400"
+        <div
+          className={`inline-flex w-fit items-center gap-1 rounded-xl border p-1 ${colors.rangeContainer}`}
+          role="group"
+          aria-label="Activity date range"
         >
-          + New report
-        </button>
+          {(Object.keys(activityRanges) as DashboardRange[]).map((range) => (
+            <button
+              key={range}
+              type="button"
+              onClick={() => onSelectedRangeChange(range)}
+              aria-pressed={selectedRange === range}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                selectedRange === range
+                  ? "bg-violet-600 text-white shadow-sm"
+                  : colors.inactiveRange
+              }`}
+            >
+              {range}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h4 className="font-semibold text-white">Overview metrics</h4>
-          <span className="text-xs text-slate-500">Sample data</span>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className={`text-lg font-semibold ${colors.heading}`}>
+              Overview
+            </h2>
+            <p className={`mt-1 text-xs ${colors.text}`}>
+              Key development metrics
+            </p>
+          </div>
+          <span className={`text-xs ${colors.text}`}>Demo data</span>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -94,29 +181,35 @@ export default function Dashboard() {
             return (
               <article
                 key={stat.title}
-                className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition hover:border-slate-700"
+                className={`group min-w-0 rounded-2xl border p-5 transition-all duration-200 ${colors.card} ${colors.cardHover}`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm font-medium text-slate-400">
-                    {stat.title}
-                  </p>
-                  <div
-                    className={`rounded-xl p-2.5 ${colorStyles[stat.color]}`}
-                  >
-                    <Icon size={20} />
+                  <div className="min-w-0">
+                    <p className={`text-sm font-medium ${colors.text}`}>
+                      {stat.title}
+                    </p>
+                    <p className={`mt-3 text-3xl font-bold tracking-tight ${colors.heading}`}>
+                      {stat.value}
+                    </p>
+                  </div>
+
+                  <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${stat.iconBg}`}>
+                    <Icon size={21} strokeWidth={1.8} className={stat.iconColor} />
                   </div>
                 </div>
 
-                <p className="mt-5 text-3xl font-bold tracking-tight text-white">
-                  {stat.value}
-                </p>
-
-                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
+                <div className={`mt-5 flex items-center gap-2 border-t pt-4 ${colors.divider}`}>
+                  <span className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-1 text-xs font-semibold ${
+                    stat.positive
+                      ? "bg-emerald-500/10 text-emerald-500"
+                      : "bg-rose-500/10 text-rose-500"
+                  }`}>
                     <TrendIcon size={14} />
                     {stat.change}
                   </span>
-                  <span className="text-slate-500">{stat.detail}</span>
+                  <span className={`min-w-0 truncate text-xs ${colors.text}`}>
+                    {stat.description}
+                  </span>
                 </div>
               </article>
             );
@@ -124,66 +217,101 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 xl:col-span-2">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-500">
+              <Activity size={20} />
+            </div>
             <div>
-              <h4 className="font-semibold text-white">Development activity</h4>
-              <p className="mt-1 text-sm text-slate-400">
-                Commit and pull request activity will appear here.
+              <h2 className={`text-lg font-semibold ${colors.heading}`}>
+                Development Activity
+              </h2>
+              <p className={`mt-1 text-xs ${colors.text}`}>
+                Commit and pull request trends
               </p>
             </div>
-            <span className="rounded-lg border border-slate-800 px-3 py-1.5 text-xs text-slate-400">
-              Last 7 days
+          </div>
+
+          <span className={`rounded-lg px-3 py-1.5 text-xs font-medium ${colors.rangeBadge}`}>
+            {selectedRange} view
+          </span>
+        </div>
+
+        <ActivityChart data={chartData} isDark={isDark} />
+      </section>
+
+      <section className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
+        <div className="min-w-0">
+          <LanguageChart data={languageUsage} isDark={isDark} />
+        </div>
+
+        <article className={`min-w-0 rounded-2xl border p-5 sm:p-6 ${colors.card}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <GitBranch size={19} className="text-violet-500" />
+                <h2 className={`text-lg font-semibold ${colors.heading}`}>
+                  Repository Health
+                </h2>
+              </div>
+              <p className={`mt-2 text-sm ${colors.text}`}>
+                Overview of repository status
+              </p>
+            </div>
+
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+              isDark
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "bg-emerald-50 text-emerald-700"
+            }`}>
+              3 of 4 healthy
             </span>
           </div>
 
-          <div className="mt-6 flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 text-center">
-            <Activity size={28} className="text-slate-600" />
-            <p className="mt-3 text-sm font-medium text-slate-300">
-              Activity chart coming next
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              We will add interactive Recharts visualizations in Step 7.
-            </p>
-          </div>
-        </div>
+          <div className="mt-6 space-y-1">
+            {repositoryHealth.map((repository) => {
+              const healthy = repository.status === "Healthy";
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
-          <h4 className="font-semibold text-white">Repository health</h4>
-          <p className="mt-1 text-sm text-slate-400">
-            A quick look at your project
-          </p>
-
-          <div className="mt-6 space-y-5">
-            {[
-              { label: "Build status", value: "Passing", color: "bg-emerald-400" },
-              { label: "Open pull requests", value: "12", color: "bg-violet-400" },
-              { label: "Pending issues", value: "24", color: "bg-amber-400" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
-                  <span className="text-sm text-slate-400">{item.label}</span>
+              return (
+                <div
+                  key={repository.name}
+                  className={`flex items-center justify-between gap-3 rounded-xl px-3 py-3 transition-colors ${
+                    isDark ? "hover:bg-slate-800/60" : "hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className={`size-2 shrink-0 rounded-full ${
+                      healthy ? "bg-emerald-500" : "bg-amber-500"
+                    }`} />
+                    <span className={`truncate text-sm ${colors.repositoryText}`}>
+                      {repository.name}
+                    </span>
+                  </div>
+                  <span className={`shrink-0 text-xs font-medium ${
+                    healthy ? "text-emerald-500" : "text-amber-500"
+                  }`}>
+                    {repository.status}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-white">
-                  {item.value}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="mt-7 rounded-xl bg-slate-800/60 p-4">
-            <p className="text-sm font-medium text-white">Looking good</p>
-            <p className="mt-1 text-xs leading-5 text-slate-400">
-              This preview uses sample data. Real repository health checks
-              will be added with GitHub API integration.
-            </p>
+          <div className={`mt-5 flex items-center gap-2 border-t pt-4 text-xs ${colors.divider} ${colors.text}`}>
+            <Clock3 size={14} />
+            <span>Illustrative repository status</span>
+            <ArrowRight size={14} className="ml-auto" />
           </div>
-        </div>
+        </article>
+      </section>
+
+      <section className="min-w-0">
+        <RecentCommits isDark={isDark} searchQuery={searchQuery} />
+      </section>
+
+      <section className="min-w-0">
+        <GitHubExplorer isDark={isDark} />
       </section>
     </div>
   );
